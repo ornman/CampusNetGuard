@@ -1,5 +1,5 @@
 ﻿# ============================================================
-# CampusNetGuard 状态检查（net-status）
+# GatewayGuard 状态检查（net-status）
 # 用法: net-status.ps1 [-NoPause]   （桌面快捷方式双击 = 带暂停）
 # ============================================================
 param([switch]$NoPause)
@@ -12,7 +12,7 @@ $warn = [char]0x26A0 # ⚠
 function Line { param([string]$c) Write-Host $c -ForegroundColor Gray }
 function Head { param([string]$t) Write-Host ""; Write-Host "== $t ==" -ForegroundColor Cyan }
 
-Write-Host "CampusNetGuard 网络状态  $(Get-Date -Format 'yyyy-MM-dd HH:mm')" -ForegroundColor Yellow
+Write-Host "GatewayGuard 网络状态  $(Get-Date -Format 'yyyy-MM-dd HH:mm')" -ForegroundColor Yellow
 
 # ---------- 1. 服务状态 ----------
 Head "服务"
@@ -34,7 +34,7 @@ if ($eth) {
 $ssid = Get-WlanSsid
 $wlan = Get-WlanAlias
 if ($ssid) {
-    $tag = if ($ssid -eq $HotspotSsid) { "(=手机热点)" } elseif ($ssid -eq "guat") { "(=校园WiFi)" } else { "" }
+    $tag = if ($ssid -eq $HotspotSsid) { "(=手机热点)" } elseif ($ssid -eq "campus-wifi") { "(=校园WiFi)" } else { "" }
     Write-Host "$ok WiFi: $ssid $tag" -ForegroundColor Green
 } else { Write-Host "$warn WiFi: 未连接" -ForegroundColor Yellow }
 $usb = Get-UsbTetherAdapter
@@ -47,9 +47,9 @@ $campus = $false
 try { $campus = (Test-Connection -ComputerName 10.1.2.3 -Count 1 -Quiet -ErrorAction Stop) } catch { }
 if ($campus) {
     Write-Host "$warn 10.1.2.3 可达 -> 当前处于校园网环境" -ForegroundColor Yellow
-    Write-Host "   代理流量已被强制锁定在手机热点出口，校园网仅承载国内直连" -ForegroundColor Gray
+    Write-Host "   代理流量已被强制锁定在手机热点出口,校园网仅承载国内直连" -ForegroundColor Gray
 } else {
-    Write-Host "$ok 10.1.2.3 不可达 -> 非校园网环境（或仅热点在线）" -ForegroundColor Green
+    Write-Host "$ok 10.1.2.3 不可达 -> 非校园网环境(或仅热点在线)" -ForegroundColor Green
 }
 
 # ---------- 4. 代理出口状态 ----------
@@ -99,15 +99,15 @@ else { Write-Host "$bad 以下网卡 IPv6 仍启用: $($bad6 -join ', ')" -Foreg
 $reg = Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings"
 if ($reg.ProxyEnable -eq 0) { Write-Host "$ok 系统代理关闭（TUN 全局接管中）" -ForegroundColor Green }
 else { Write-Host "$warn 系统代理开启: $($reg.ProxyServer)" -ForegroundColor Yellow }
-# 6.3 国外域名解析应得 fake-ip（校园 DNS 看不到国外查询）
+# 6.3 国外域名解析应得 fake-ip(主网络 DNS 看不到国外查询)
 $fake = $null
 try {
     $r = Resolve-DnsName -Name "www.google.com" -Type A -DnsOnly -QuickTimeout -ErrorAction Stop
     $fake = @($r | Where-Object { $_.IPAddress }).IPAddress | Select-Object -First 1
 } catch { }
-if ($fake -match "^198\.18\.") { Write-Host "$ok 国外域名解析为 fake-ip($fake)，校园 DNS 零泄露" -ForegroundColor Green }
+if ($fake -match "^198\.18\.") { Write-Host "$ok 国外域名解析为 fake-ip($fake),主网络 DNS 零泄露" -ForegroundColor Green }
 elseif ($fake) { Write-Host "$warn www.google.com 解析为真实 IP($fake)——请检查 TUN/DNS 劫持" -ForegroundColor Red }
-else { Write-Host "$warn 国外域名解析无结果（若处于封锁态属正常）" -ForegroundColor Yellow }
+else { Write-Host "$warn 国外域名解析无结果(若处于封锁态属正常)" -ForegroundColor Yellow }
 
 # ---------- 7. 连通性实测 ----------
 Head "连通性实测"

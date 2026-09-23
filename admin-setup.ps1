@@ -1,9 +1,10 @@
 ﻿# ============================================================
-# CampusNetGuard 一次性管理员设置（需 UAC 提权运行）
+# GatewayGuard 一次性管理员设置（需 UAC 提权运行）
 #  1) 清理 Radmin VPN / Wi-Fi Direct 的垫底默认路由
-#  2) 物理网卡禁用 IPv6（封死 v6 旁路；校园 v6 资源将不可用，README 有恢复方法）
+#  2) 物理网卡禁用 IPv6（封死 v6 旁路；走 IPv6 资源将不可用，README 有恢复方法）
 #  3) 退出 FlClash 并移除其开机自启（避免与受管内核抢 7890/TUN）
-#  4) 注册并启动两个计划任务：CampusNetGuard-Core / CampusNetGuard-Watchdog
+#  4) 注册并启动两个计划任务：Core / Watchdog
+# 注:任务名保留 "CampusNetGuard-*" 前缀以兼容已部署的计划任务
 # ============================================================
 #requires -RunAsAdministrator
 $ErrorActionPreference = "Continue"

@@ -1,0 +1,5 @@
+{
+  "_comment": "Replace these placeholder SSIDs with your real ones. The watchdog re-reads this file every 5 seconds.",
+  "proxy_ssids": ["my-hotspot"],
+  "direct_ssids": ["my-campus-wifi"]
+}

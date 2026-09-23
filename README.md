@@ -1,10 +1,10 @@
-# CampusNetGuard
+# GatewayGuard
 
-> Route proxy traffic through a designated gateway — keep your main network clean.
+> Bind mihomo proxy traffic to a designated gateway — keep your main network clean.
 
-A Windows watchdog for [mihomo](https://github.com/MetaCubeX/mihomo) that binds proxy egress to the right physical interface based on your active network (USB tether / WiFi hotspot / fail-closed).
+A Windows watchdog for [mihomo](https://github.com/MetaCubeX/mihomo) that auto-switches the proxy egress interface based on your active network. USB tether, WiFi hotspot, or fail-closed — the right physical adapter gets bound, your main network never carries proxy traffic.
 
-| | CampusNetGuard | FlClash / clash-verge |
+| | GatewayGuard | FlClash / clash-verge |
 |---|---|---|
 | Physical interface auto-binding | ✅ | ❌ |
 | Fail-closed safety | ✅ | ❌ |
@@ -15,15 +15,23 @@ A Windows watchdog for [mihomo](https://github.com/MetaCubeX/mihomo) that binds 
 
 ## Install
 
-Prerequisites: Windows 10/11, [mihomo](https://github.com/MetaCubeX/mihomo/releases) binary, [FlClash](https://github.com/chen08209/FlClash) for UI.
+You need Windows 10/11 + the [mihomo](https://github.com/MetaCubeX/mihomo/releases) binary on disk. For node selection / subscription UI, install [FlClash](https://github.com/chen08209/FlClash) and point it at `127.0.0.1:9090`.
 
 ```powershell
-git clone https://github.com/<your-org>/CampusNetGuard.git
-cd CampusNetGuard
-powershell -NoProfile -ExecutionPolicy Bypass -File admin-setup.ps1  # Run as Administrator
+git clone https://github.com/ornman/GatewayGuard.git
+cd GatewayGuard
+# Edit configs/config-template.yaml if you want to customize the ruleset
+powershell -NoProfile -ExecutionPolicy Bypass -File admin-setup.ps1
 ```
 
-The installer cleans route pollution, disables IPv6 on physical NICs, registers two scheduled tasks (`CampusNetGuard-Core` + `CampusNetGuard-Watchdog`), and asks once to confirm your SSID config.
+Right-click the script → "Run as Administrator". It will:
+
+1. Remove leftover default routes from Radmin VPN / Wi-Fi Direct
+2. Disable IPv6 on physical network adapters (prevents IPv6 leak)
+3. Register two scheduled tasks for auto-start on login (see below)
+4. Ask once to confirm your SSID config (smart default based on your current network)
+
+> Note: scheduled tasks are still registered under the legacy names `CampusNetGuard-Core` and `CampusNetGuard-Watchdog` for backward compatibility. New installs create them with the same names. Use `scripts\net-status.ps1` to check status.
 
 ## Configuration
 
@@ -31,14 +39,14 @@ Edit `state/cng-config.json`:
 
 ```json
 {
-  "proxy_ssids": ["vivo X200s", "MyPhone-Hotspot"],
-  "direct_ssids": ["guat", "company-wifi"]
+  "proxy_ssids": ["my-hotspot"],
+  "direct_ssids": ["my-campus-wifi"]
 }
 ```
 
-The watchdog re-reads this every 5 seconds. No restart needed.
+Replace with your real SSID names. The watchdog re-reads this every 5 seconds. No restart needed.
 
-To reconfigure later: run `scripts\configure-ssids.ps1` (auto-detects + recommends + asks Y to confirm).
+To reconfigure later: run `scripts\configure-ssids.ps1` (auto-detects current network + recommends + asks Y to confirm).
 
 ## How it works
 

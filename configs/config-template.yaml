@@ -1,10 +1,11 @@
 # ============================================================
-# CampusNetGuard - mihomo 受管配置（由 scripts/make-config.ps1 从模板生成）
+# GatewayGuard - mihomo 受管配置（由 scripts/make-config.ps1 从模板生成）
 # 占位符 __EGRESS_IF__ = 代理出口网卡名（由看门狗按状态注入）
-#   usb     -> vivo USB 共享网络网卡（远程NDIS/NCM）
-#   wlan    -> WLAN 网卡（仅当 SSID = vivo X200s 热点时）
+#   usb     -> 手机 USB 共享网络网卡（NDIS/NCM）
+#   wlan    -> WLAN 网卡（SSID 匹配 proxy_ssids 时）
 #   blocked -> 指向不存在的网卡，代理出站必然失败（fail-closed）
-# 核心原则：代理流量只允许从手机热点出；国内直连走 Windows 路由自动选路
+# 核心原则：代理流量走你指定的网关；主网络不受影响
+# 注:tun.device 仍保留旧名 CampusNetGuard,以兼容已部署的 mihomo 实例
 # ============================================================
 mixed-port: 7890
 external-controller: 127.0.0.1:9090

@@ -34,6 +34,10 @@ scripts/make-shortcut.ps1
 # ---- 个人 AI 会话笔记(本地保留,不公开)----
 START.md
 
+# ---- 过程文档(本地留作历史档案,不入开源仓库)----
+AGENTS.md
+REQUIREMENTS.md
+
 # ---- Windows / 系统 ----
 Thumbs.db
 .DS_Store
