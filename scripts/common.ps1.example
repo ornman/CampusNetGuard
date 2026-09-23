@@ -1,0 +1,22 @@
+# CampusNetGuard 公共库(PS 5.1 兼容)—— **样板文件**
+# 真实部署时:复制本文件为 `common.ps1`,填入你的真实值
+# 真实 `common.ps1` 在 .gitignore 里,绝对不要 commit
+
+# 自动探测安装根目录(从 scripts/ 目录往上一级)。项目装在别处就不用动这一行。
+$script:Root = Split-Path -Parent $PSScriptRoot
+
+$script:AppliedCfg = "$Root\core\reload\current.yaml"   # API 热重载路径(必须在 mihomo -d 主目录内)
+$script:BootCfg = "$Root\configs\applied\current.yaml"  # 计划任务启动路径(内容相同,双写)
+$script:StateFile = "$Root\state\state.json"
+$script:LogFile = "$Root\logs\watchdog.log"
+$script:ApiBase = "http://127.0.0.1:9090"
+
+# ↓↓↓↓↓ 填你的真实值 ↓↓↓↓↓
+# mihomo 外部控制器鉴权 secret(从 admin-setup.ps1 生成的 24 位随机串)
+$script:ApiSecret = "REPLACE_ME_AT_FIRST_INSTALL"
+
+# 你的手机热点 SSID(cng-config.json 为空时回退到这里)
+$script:HotspotSsid = "REPLACE_ME_AT_FIRST_INSTALL"
+
+# 看门狗用的阻断网卡名(默认 NO-EGRESS-BlockAll,一般不用改)
+$script:BlockedIf = "NO-EGRESS-BlockAll"

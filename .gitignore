@@ -1,0 +1,50 @@
+# CampusNetGuard 父项目 .gitignore
+# 父项目 + ui/ 作为 monorepo 一个 git 仓
+
+# ---- mihomo 运行时(核心二进制 + 数据文件,绝对不能 commit) ----
+core/
+!core/.gitkeep
+
+# ---- 看门狗运行时数据 ----
+state/
+logs/
+
+# ---- 用户私有配置(运行时生成) ----
+configs/applied/current.yaml
+configs/*/current.yaml
+
+# ---- 含敏感信息的脚本(API secret + SSID)----
+scripts/common.ps1
+
+# ---- 模板文件(允许 commit) ----
+!scripts/common.ps1.example
+
+# ---- TUI 子项目整体私有(已停更,v2 不用)----
+# 整个 ui/ 不入 git,留作本地参考。包含源码 + 历史构建产物。
+ui/
+!ui/.gitkeep
+
+# ---- v1 死代码(本地留作历史档案,不入开源仓库)----
+# 这些是 v1 TUI 时期的脚本,已不用。本地保留供查阅,仓库里排除。
+docs/cng-tui-prd.md
+scripts/install.ps1
+scripts/verify-cng-tui.ps1
+scripts/make-shortcut.ps1
+
+# ---- 个人 AI 会话笔记(本地保留,不公开)----
+START.md
+
+# ---- Windows / 系统 ----
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# ---- 编辑器 ----
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---- 临时 ----
+*.tmp
+*.bak

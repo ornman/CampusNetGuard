@@ -1,0 +1,135 @@
+# ============================================================
+# CampusNetGuard - mihomo 受管配置（由 scripts/make-config.ps1 从模板生成）
+# 占位符 __EGRESS_IF__ = 代理出口网卡名（由看门狗按状态注入）
+#   usb     -> vivo USB 共享网络网卡（远程NDIS/NCM）
+#   wlan    -> WLAN 网卡（仅当 SSID = vivo X200s 热点时）
+#   blocked -> 指向不存在的网卡，代理出站必然失败（fail-closed）
+# 核心原则：代理流量只允许从手机热点出；国内直连走 Windows 路由自动选路
+# ============================================================
+mixed-port: 7890
+external-controller: 127.0.0.1:9090
+secret: __MIHOMO_API_SECRET__   # 由 make-config.ps1 从 scripts/common.ps1 注入
+mode: rule
+log-level: warning
+ipv6: false
+allow-lan: false
+unified-delay: true
+tcp-concurrent: true
+keep-alive-interval: 30
+find-process-mode: off
+profile:
+  store-selected: true
+
+tun:
+  enable: true
+  device: CampusNetGuard
+  stack: mixed
+  dns-hijack:
+    - any:53
+  auto-route: true
+  auto-detect-interface: true
+  mtu: 1500
+
+dns:
+  enable: true
+  listen: 127.0.0.1:1053
+  ipv6: false
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter:
+    - "*.lan"
+    - "*.local"
+    - "+.msftconnecttest.com"
+    - "+.msftncsi.com"
+  default-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  nameserver:
+    - "https://doh.pub/dns-query"
+    - "https://dns.alidns.com/dns-query"
+  proxy-server-nameserver:
+    - "https://doh.pub/dns-query"
+
+sniffer:
+  enable: true
+  parse-pure-ip: true
+  override-destination: false
+  sniff:
+    TLS:
+      ports: [443, 8443]
+    HTTP:
+      ports: [80, 8080-8880]
+      override-destination: true
+
+# 代理出站强制绑定出口：所有机场节点经 BIND-EGRESS 拨号
+proxies:
+  - name: BIND-EGRESS
+    type: direct
+    interface-name: __EGRESS_IF__
+
+# proxy-providers.airport 由 TUI 后台 worker 维护:
+#   - 启动时拉一次 true_url,启动后每小时拉一次
+#   - 解析后写到 <install_root>/core/providers/airport.yaml
+#   - PUT /configs?force=true 触发 mihomo 读新文件
+# 这里 type: file,interval 表示文件 mtime 检查周期
+proxy-providers:
+  airport:
+    type: file
+    path: providers/airport.yaml
+    interval: 3600
+    health-check:
+      enable: true
+      url: "http://connect.rom.miui.com/generate_204"
+      interval: 300
+    # 过滤机场的"剩余流量/到期时间"等信息假节点
+    exclude-filter: "剩余|到期|过期|官网|重置|套餐|流量|订阅|电邮|电报|防失联|群组"
+    override:
+      dialer-proxy: BIND-EGRESS
+
+proxy-groups:
+  # 国外主出口：自动选延迟最低节点（热点不在线时全部节点不可达 -> fail-closed）
+  - name: PROXY
+    type: url-test
+    use: [airport]
+    url: "http://connect.rom.miui.com/generate_204"
+    interval: 300
+    tolerance: 80
+    lazy: false
+  # 特殊站点（GitHub/Docker/npm/PyPI/HF）：代理优先，热点/节点不可用时自动回落直连
+  - name: SPECIAL
+    type: fallback
+    proxies: [PROXY, DIRECT]
+    url: "http://connect.rom.miui.com/generate_204"
+    interval: 60
+    lazy: false
+  # 国外兜底：与 SPECIAL 同策略——代理优先，不可用则回落直连（出口自然拦截，
+  # 本地不做二次封锁；代理泄露防护由 BIND-EGRESS 网卡绑定独立保证）
+  - name: FOREIGN
+    type: fallback
+    proxies: [PROXY, DIRECT]
+    url: "http://connect.rom.miui.com/generate_204"
+    interval: 60
+    lazy: false
+
+rules:
+  # 本机 AI 工具端点：智谱/MiniMax 国内可达，显式直连（防止被当成国外走代理封锁）
+  - DOMAIN-SUFFIX,z.ai,DIRECT
+  - DOMAIN-SUFFIX,bigmodel.cn,DIRECT
+  - DOMAIN-SUFFIX,minimaxi.com,DIRECT
+  - GEOSITE,private,DIRECT
+  - GEOSITE,github,SPECIAL
+  - DOMAIN-SUFFIX,docker.io,SPECIAL
+  - DOMAIN-SUFFIX,docker.com,SPECIAL
+  - DOMAIN-SUFFIX,gcr.io,SPECIAL
+  - DOMAIN-SUFFIX,ghcr.io,SPECIAL
+  - DOMAIN-SUFFIX,pypi.org,SPECIAL
+  - DOMAIN-SUFFIX,pythonhosted.org,SPECIAL
+  - DOMAIN-SUFFIX,npmjs.org,SPECIAL
+  - DOMAIN-SUFFIX,npmjs.com,SPECIAL
+  - DOMAIN-SUFFIX,huggingface.co,SPECIAL
+  - DOMAIN-SUFFIX,hf.co,SPECIAL
+  - DOMAIN-SUFFIX,cloudflare.com,SPECIAL
+  - GEOSITE,cn,DIRECT
+  - GEOIP,private,DIRECT,no-resolve
+  - GEOIP,CN,DIRECT
+  - MATCH,FOREIGN
